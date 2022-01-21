@@ -11,7 +11,7 @@ cursor = conn.cursor()
 
 
 # create a new db
-sql = """CREATE database db_cities_regions""";
+sql = """CREATE database regions""";
 cursor.execute(sql)
 print("Database created successfully.")
 conn.commit()
@@ -22,7 +22,7 @@ db.create_all()
 
 # connect to the new db
 conn = psycopg2.connect(
-   database='db_cities_regions', user='postgres', password='postgres', host='localhost', port='5432'
+   database='regions', user='postgres', password='postgres', host='localhost', port='5432'
 )
 cursor = conn.cursor()
 
@@ -39,15 +39,15 @@ regions_vals = """INSERT INTO regions(id, name) VALUES (1, 'Bashkortostan Republ
                 INSERT INTO regions(id, name) VALUES (3, 'Murmanskaya oblast');
                 INSERT INTO regions(id, name) VALUES (4, 'Sverdlovskaya oblast');"""
 
-cities_vals = """INSERT INTO cities(id, region_id, name) VALUES (1, 1, 'Ufa');
-                INSERT INTO cities(id, region_id, name) VALUES (2, 1, 'Sterlitamak');
-                INSERT INTO cities(id, region_id, name) VALUES (3, 1, 'Kumertau');
-                INSERT INTO cities(id, region_id, name) VALUES (4, 2, 'Kazan');
-                INSERT INTO cities(id, region_id, name) VALUES (5, 2, 'Innopolis');
-                INSERT INTO cities(id, region_id, name) VALUES (6, 3, 'Murmansk');
-                INSERT INTO cities(id, region_id, name) VALUES (7, 3, 'Teriberka');
-                INSERT INTO cities(id, region_id, name) VALUES (8, 4, 'Ekaterinburg');
-                INSERT INTO cities(id, region_id, name) VALUES (9, 4, 'Pervouralsk');"""
+cities_vals = """INSERT INTO cities(region_id, name) VALUES (1, 'Ufa');
+                INSERT INTO cities(region_id, name) VALUES (1, 'Sterlitamak');
+                INSERT INTO cities(region_id, name) VALUES (1, 'Kumertau');
+                INSERT INTO cities(region_id, name) VALUES (2, 'Kazan');
+                INSERT INTO cities(region_id, name) VALUES (2, 'Innopolis');
+                INSERT INTO cities(region_id, name) VALUES (3, 'Murmansk');
+                INSERT INTO cities(region_id, name) VALUES (3, 'Teriberka');
+                INSERT INTO cities(region_id, name) VALUES (4, 'Ekaterinburg');
+                INSERT INTO cities(region_id, name) VALUES (4, 'Pervouralsk');"""
 
 cursor.execute(users_vals)
 cursor.execute(regions_vals)
