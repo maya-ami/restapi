@@ -1,13 +1,12 @@
 import psycopg2
 
 conn = psycopg2.connect(
-   database="postgres", user='postgres', password='postgres', host='localhost', port='5432'
+   database="db_cities_regions", user='postgres', password='postgres', host='localhost', port='5432'
 )
-conn.autocommit = True
 
 
 cursor = conn.cursor()
-sql = """SELECT * FROM cities"""
+sql = """SELECT * FROM regions"""
 cursor.execute(sql)
 result = cursor.fetchall()
 print(result)
