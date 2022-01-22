@@ -70,7 +70,7 @@ def login_user():
   return make_response('Could not verify',  401, {'WWW.Authentication': 'Basic realm: "Login required"'})
 
 
-@app.route('/api/regions', methods=['GET'])
+@app.route('/api/region', methods=['GET'])
 def all_regions():
 
    regions = Regions.query.all()
@@ -88,8 +88,24 @@ def all_regions():
 
    return jsonify({'regions': result})
 
+@app.route('/api/region/<region_id>', methods=['GET'])
+def one_region(region_id):
 
-@app.route('/api/cities', methods=['GET'])
+   region = Regions.query.get(region_id)
+
+   if not region:
+       return jsonify({'region': 'No region with id {}'.format(region_id)})
+
+   result = {}
+   result['id'] = region.id
+   result['name'] = region.name
+   city_names = [c.name for c in region.cities]
+   result['cities'] = city_names
+
+   return jsonify({'region': result})
+
+
+@app.route('/api/city', methods=['GET'])
 def all_cities():
 
    cities = Cities.query.all()
@@ -107,7 +123,23 @@ def all_cities():
    return jsonify({'cities': result})
 
 
-@app.route('/api/cities_by_region_name/<region_name>', methods=['GET'])
+@app.route('/api/city/<city_id>', methods=['GET'])
+def one_city(city_id):
+
+   city = Cities.query.get(city_id)
+
+   if not city:
+       return jsonify({'city': 'No city with id {}'.format(city_id)})
+
+   result = {}
+   result['id'] = city.id
+   result['name'] = city.name
+   result['region'] = Regions.query.filter(Regions.id == city.region_id).first().name
+
+   return jsonify({'city': result})
+
+
+@app.route('/api/city/region_name/<region_name>', methods=['GET'])
 def cities_by_region_name(region_name):
     region = Regions.query.filter(Regions.name == region_name).all()
     if not region:
@@ -126,7 +158,7 @@ def cities_by_region_name(region_name):
     return jsonify({'cities': result})
 
 
-@app.route('/api/cities_by_region_id/<region_id>', methods=['GET'])
+@app.route('/api/city/region_id/<region_id>', methods=['GET'])
 def cities_by_region_id(region_id):
     cities = Cities.query.filter(Cities.region_id == region_id).all()
     if not cities:
@@ -144,7 +176,7 @@ def cities_by_region_id(region_id):
     return jsonify({'cities': result})
 
 
-@app.route('/api/create_region', methods=['POST'])
+@app.route('/api/region', methods=['POST'])
 @user_authorization
 def create_region(current_user):
     data = request.get_json(force=True)
@@ -152,20 +184,19 @@ def create_region(current_user):
        return jsonify({'message' : 'No data.'})
 
     # check if the region already exists
-    region = Regions.query.filter(Regions.name == data['name']).all()
+    region = Regions.query.filter(Regions.id == data['id']).all()
 
     if region:
-        return jsonify({'message' : 'Region already exists.'})
+        return jsonify({'message' : 'Region with id {} already exists.'.format(data['id'])})
     else:
-        current_num = len(Regions.query.all())
-        new_region = Regions(id = current_num+1, name=data['name'])
+        new_region = Regions(id = data['id'], name=data['name'])
         db.session.add(new_region)
         db.session.commit()
 
     return jsonify({'message' : 'New region {} created.'.format(data['name'])})
 
 
-@app.route('/api/create_city', methods=['POST'])
+@app.route('/api/city', methods=['POST'])
 @user_authorization
 def create_city(current_user):
     data = request.get_json(force=True)
@@ -173,25 +204,91 @@ def create_city(current_user):
        return jsonify({'message' : 'No data'})
 
     # check if the city already exists
-    city = Cities.query.filter(Cities.name == data['name']).all()
+    city = Cities.query.filter(Cities.id == data['id']).all()
 
     # check if the supplied region_id already exists
     region_id = Regions.query.filter(Regions.id == data['region_id']).all()
 
     if city:
-        return jsonify({'message' : 'City already exists.'})
+        return jsonify({'message' : 'City with id {} already exists.'.format(data['id'])})
     elif not region_id:
-        return jsonify({'message' : 'This region id does not exist.'})
+        return jsonify({'message' : 'Region with id {} does not exist.'.format(data['region_id'])})
     else:
-        current_num = len(Cities.query.all())
-        print(current_num)
-        new_city = Cities(id = current_num+1, name=data['name'], region_id=data['region_id'])
+        new_city = Cities(id = data['id'], name=data['name'], region_id=data['region_id'])
         db.session.add(new_city)
         db.session.commit()
 
     return jsonify({'message' : 'New city {} created'.format(data['name'])})
 
 
+@app.route('/api/region', methods=['PUT'])
+@user_authorization
+def update_region(current_user):
+    data = request.get_json(force=True)
+    if not data:
+       return jsonify({'message' : 'No data.'})
+
+    # check if the region exists
+    region = Regions.query.get(data['id'])
+
+    if not region:
+        return jsonify({'message' : 'No region with id {}'.format(data['id'])})
+    else:
+        region.name = data['name']
+        db.session.commit()
+
+    return jsonify({'message' : 'Region {} is updated.'.format(data['id'])})
+
+
+@app.route('/api/city', methods=['PUT'])
+@user_authorization
+def update_city(current_user):
+    data = request.get_json(force=True)
+    if not data:
+       return jsonify({'message' : 'No data.'})
+
+    # check if the city exists
+    city = Cities.query.get(data['id'])
+
+    if not city:
+        return jsonify({'message' : 'No city with id {}'.format(data['id'])})
+    else:
+        city.name = data['name']
+        city.region_id = data['region_id']
+        db.session.commit()
+
+    return jsonify({'message' : 'City {} is updated.'.format(data['id'])})
+
+
+@app.route('/api/region/<region_id>', methods=['DELETE'])
+@user_authorization
+def delete_region(current_user, region_id):
+
+    # check if the region exists
+    region = Regions.query.get(region_id)
+
+    if not region:
+        return jsonify({'message' : 'No region with id {}'.format(region_id)})
+    else:
+        db.session.delete(region)
+        db.session.commit()
+
+    return jsonify({'message' : 'Region {} is deleted.'.format(region_id)})
+
+@app.route('/api/city/<city_id>', methods=['DELETE'])
+@user_authorization
+def delete_city(current_user, city_id):
+
+    # check if the city exists
+    city = Cities.query.get(city_id)
+
+    if not city:
+        return jsonify({'message' : 'No city with id {}'.format(city_id)})
+    else:
+        db.session.delete(city)
+        db.session.commit()
+
+    return jsonify({'message' : 'City {} is deleted.'.format(city_id)})
 
 
 if  __name__ == '__main__':
